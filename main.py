@@ -1,49 +1,34 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from database import Base, engine
+from models import user, product  # 👈 ensures tables are created
+from routers import product as product_router  # 👈 new import
+from auth.routes import router as auth_router
+from routers import cart as cart_router
+from routers import wishlist
 
-from database import SessionLocal, engine, Base
-import models.product as models
-import schemas.product as schemas
-
-# Create the database tables
+# Create DB tables
 Base.metadata.create_all(bind=engine)
 
-# Initialize FastAPI app
+# Init app
 app = FastAPI()
 
-# Setup CORS to allow requests from frontend (Next.js)
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Dependency to get a DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Root route (for testing)
+# Root
 @app.get("/")
 def root():
     return {"message": "Backend running 🎉"}
 
-# Create a new product
-@app.post("/products/", response_model=schemas.Product)
-def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
-    db_product = models.Product(**product.dict())
-    db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
-    return db_product
-
-# List all products
-@app.get("/products/", response_model=list[schemas.Product])
-def list_products(db: Session = Depends(get_db)):
-    return db.query(models.Product).all()
+# Routes
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(product_router.router, prefix="/api", tags=["Products"])
+app.include_router(cart_router.router, prefix="/api", tags=["Cart"]) 
+app.include_router(wishlist.router, prefix="/api", tags=["Wishlist"])
