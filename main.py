@@ -8,6 +8,7 @@ from auth.routes import router as auth_router
 from routers import cart
 from routers import wishlist
 from routers import admin as admin_router  # 👈 NEW
+from routers import admin_product
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -35,3 +36,4 @@ app.include_router(product_router.router, prefix="/api", tags=["Products"])
 app.include_router(cart.router)
 app.include_router(wishlist.router, prefix="/api", tags=["Wishlist"])
 app.include_router(admin_router.router, prefix="/api", tags=["Admin"])  # 👈 Admin routes
+app.include_router(admin_product.router, tags=["Admin Products"])
