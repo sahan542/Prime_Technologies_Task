@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from database import Base, engine
 from models import user, product, cart  # Include cart import
-from routers import product as product_router  # 👈 new import
+from routers import product as product_router
 from auth.routes import router as auth_router
 from routers import cart
 from routers import wishlist
+from routers import admin as admin_router  # 👈 NEW
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -32,3 +34,4 @@ app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(product_router.router, prefix="/api", tags=["Products"])
 app.include_router(cart.router)
 app.include_router(wishlist.router, prefix="/api", tags=["Wishlist"])
+app.include_router(admin_router.router, prefix="/api", tags=["Admin"])  # 👈 Admin routes

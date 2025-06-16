@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, HTTPException
+from typing import List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
+
 from database import get_db
 from models.product import Product
 from schemas.product import ProductCreate, Product as ProductSchema
@@ -14,9 +17,39 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     db.refresh(db_product)
     return db_product
 
-@router.get("/products/", response_model=list[ProductSchema])
-def list_products(db: Session = Depends(get_db)):
-    return db.query(Product).all()
+@router.get("/products/", response_model=List[ProductSchema])
+def list_products(
+    db: Session = Depends(get_db),
+    category: Optional[List[str]] = Query(None),
+    brand: Optional[List[str]] = Query(None),
+    min_price: Optional[float] = 0,
+    max_price: Optional[float] = 1_000_000,
+    search: Optional[str] = None
+):
+    query = db.query(Product)
+
+    if category:
+        query = query.filter(Product.category.in_(category))
+
+    if brand:
+        query = query.filter(Product.brand.in_(brand))
+
+    if min_price is not None and max_price is not None:
+        query = query.filter(Product.price.between(min_price, max_price))
+
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(
+            or_(
+                Product.title.ilike(pattern),
+                Product.description.ilike(pattern),
+                Product.brand.ilike(pattern),
+                Product.category.ilike(pattern),
+            )
+        )
+
+    return query.all()
+
 
 @router.get("/products/{slug}", response_model=ProductSchema)
 def get_product_by_slug(slug: str, db: Session = Depends(get_db)):

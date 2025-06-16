@@ -11,6 +11,7 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    is_admin: bool  # 👈 Added this line
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # 👈 Replaces orm_mode in Pydantic v2

@@ -10,7 +10,7 @@ from database import get_db
 router = APIRouter()
 
 # ---------------------------------------
-# Signup Route (DB)
+# Signup Route
 # ---------------------------------------
 @router.post("/signup", response_model=UserOut)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
@@ -28,7 +28,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 # ---------------------------------------
-# Login via Pydantic (e.g., frontend API calls)
+# Login (JSON body)
 # ---------------------------------------
 @router.post("/login", tags=["Auth"])
 def login(user: UserLogin, db: Session = Depends(get_db)):
@@ -36,17 +36,32 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # ✅ Store email in token payload
     token = create_access_token({"sub": db_user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "id": db_user.id,
+        "email": db_user.email
+    }
 
 # ---------------------------------------
-# Login via OAuth2PasswordRequestForm (e.g., Postman form or HTML form)
+# Login (OAuth2 Form)
 # ---------------------------------------
 @router.post("/login-form", tags=["Auth"])
-def login_form(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_form(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     db_user = db.query(User).filter(User.email == form_data.username).first()
     if not db_user or not verify_password(form_data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    # ✅ Store email in token
     token = create_access_token({"sub": db_user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
