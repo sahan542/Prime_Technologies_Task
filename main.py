@@ -9,6 +9,8 @@ from routers import cart
 from routers import wishlist
 from routers import admin as admin_router  # 👈 NEW
 from routers import admin_product
+from routers import admin_order
+
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -37,3 +39,4 @@ app.include_router(cart.router)
 app.include_router(wishlist.router, prefix="/api", tags=["Wishlist"])
 app.include_router(admin_router.router, prefix="/api", tags=["Admin"])  # 👈 Admin routes
 app.include_router(admin_product.router, tags=["Admin Products"])
+app.include_router(admin_order.router)

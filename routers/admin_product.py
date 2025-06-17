@@ -115,3 +115,66 @@ def export_products(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=products.csv"}
     )
+
+@router.get("/", response_model=list[ProductSchema])
+def get_all_products(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)
+):
+    # Fetch all products from the database
+    products = db.query(ProductModel).all()
+
+    # Return the list of products
+    return products
+
+
+@router.put("/{id}/edit", response_model=ProductSchema)
+def edit_product(
+    id: int,
+    updated_data: ProductCreate,  # Using ProductCreate for editing as it includes all necessary fields
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)
+):
+    product = db.query(ProductModel).filter(ProductModel.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Check for duplicate slug if the slug is being updated
+    if updated_data.slug != product.slug:
+        existing = db.query(ProductModel).filter(ProductModel.slug == updated_data.slug).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Product with this slug already exists")
+
+    # Ensure 'benefits' is a list (not a JSON string)
+    product_data = updated_data.dict()
+    if isinstance(product_data.get("benefits"), str):
+        import json
+        try:
+            product_data["benefits"] = json.loads(product_data["benefits"])
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON format for benefits")
+
+    # Update the product with new data
+    for key, value in product_data.items():
+        setattr(product, key, value)
+
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+@router.get("/{id}", response_model=ProductSchema)
+def get_product_by_id(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)
+):
+    # Fetch the product by its ID from the database
+    product = db.query(ProductModel).filter(ProductModel.id == id).first()
+    
+    # If no product is found, raise a 404 HTTP exception
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Return the found product
+    return product

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.orm import Session, relationship  # ✅ Added relationship
 from database import Base
-from sqlalchemy.orm import Session
 
 class User(Base):
     __tablename__ = "users"
@@ -9,6 +9,9 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
+
+    # ✅ Relationship to orders
+    orders = relationship("Order", back_populates="user", cascade="all, delete")
 
 # 🔑 Utility function to fetch user by email
 def get_user_by_email(db: Session, email: str):

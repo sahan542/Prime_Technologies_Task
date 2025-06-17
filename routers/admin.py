@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from schemas.admin import UpdateAdminStatus  # import this
+from models.user import User as UserModel
+
 
 
 from dependencies.admin_dependency import admin_required
@@ -9,6 +11,14 @@ from dependencies.auth_dependency import get_current_user
 from database import get_db
 from models.user import User
 from schemas.user import UserOut
+from fastapi.responses import StreamingResponse
+import csv
+from io import StringIO
+from models.order import Order as OrderModel
+from models.order_item import OrderItem as OrderItemModel
+from schemas.order import OrderCreate, OrderUpdate, Order as OrderSchema
+from sqlalchemy.orm import joinedload
+
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -58,3 +68,75 @@ def update_admin_status(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.get("/export", response_class=StreamingResponse)
+def export_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)  # Make sure only admin can export users
+):
+    # Fetch all users from the database
+    users = db.query(User).all()
+
+    # Create a StringIO buffer to hold the CSV data
+    output = StringIO()
+    writer = csv.writer(output)
+
+    # Write the CSV headers
+    writer.writerow([
+        "ID", "Username", "Email", "Is Admin", "Created At", "Updated At"
+    ])
+
+    # Write each user's data to the CSV
+    for user in users:
+        writer.writerow([
+            user.id, user.username, user.email, user.is_admin, user.created_at, user.updated_at
+        ])
+
+    output.seek(0)  # Rewind the buffer to the beginning
+
+    # Return the CSV as a downloadable response
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=users.csv"}
+    )
+
+
+@router.get("/orders", response_model=list[OrderSchema], summary="Get all orders")
+def get_all_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)
+):
+    """
+    This endpoint retrieves all orders from the database.
+    It handles the `/api/admin/orders` route.
+    """
+    # Query all orders in the database
+    orders = db.query(OrderModel).all()
+
+    if not orders:
+        raise HTTPException(status_code=404, detail="No orders found")
+
+    return orders
+
+
+
+
+# Corrected endpoint for getting all orders
+@router.get("/", response_model=list[OrderSchema], summary="Get all orders")
+def get_all_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)
+):
+    """
+    This endpoint retrieves all orders from the database.
+    It handles the `/api/admin/orders` route.
+    """
+    # Query all orders in the database
+    orders = db.query(OrderModel).all()
+
+    if not orders:
+        raise HTTPException(status_code=404, detail="No orders found")
+
+    return orders
