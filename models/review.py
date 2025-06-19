@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, func, Boolean
 from database import Base
 
 class Review(Base):
@@ -9,4 +9,5 @@ class Review(Base):
     user_name = Column(String, nullable=False)
     rating = Column(Integer, nullable=False)
     comment = Column(Text)
+    is_public = Column(Boolean, default=False)  # 👈 Add this line
     created_at = Column(TIMESTAMP, server_default=func.now())

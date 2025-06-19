@@ -10,7 +10,6 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
 
-    # ✅ Relationship to orders
     orders = relationship("Order", back_populates="user", cascade="all, delete")
 
 # 🔑 Utility function to fetch user by email

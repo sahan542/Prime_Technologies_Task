@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric
+from sqlalchemy.orm import relationship
 from database import Base
 
 class OrderItem(Base):
@@ -6,5 +7,10 @@ class OrderItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
-    product_id = Column(Integer, nullable=False)
+    
+    product_id = Column(String, nullable=False)  # Changed to match string IDs from frontend
+    name = Column(String, nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
     quantity = Column(Integer, nullable=False)
+
+    order = relationship("Order", back_populates="items")  # Add reverse relationship

@@ -3,7 +3,6 @@ from typing import Optional
 from datetime import datetime
 
 class ReviewBase(BaseModel):
-    user_name: str
     rating: int
     comment: Optional[str]
 
@@ -12,6 +11,9 @@ class ReviewCreate(ReviewBase):
 
 class Review(ReviewBase):
     id: int
+    product_id: int
+    user_name: str
+    is_public: bool
     created_at: datetime
 
     class Config:

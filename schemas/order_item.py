@@ -1,18 +1,23 @@
 from pydantic import BaseModel
 
-# Base model for order items with common fields
+# Base class used for shared fields
 class OrderItemBase(BaseModel):
-    product_id: int
+    product_id: str
     quantity: int
 
-# Model used for creating order items (inherits from OrderItemBase)
-class OrderItemCreate(OrderItemBase):
-    pass  # No additional fields for creation; just inherits OrderItemBase
+# ✅ Creation schema — includes all fields needed during POST
+class OrderItemCreate(BaseModel):
+    product_id: str
+    name: str
+    price: float
+    quantity: int
 
-# Full model for order items, including ID and associated order ID
+# ✅ Response schema — used when returning from DB
 class OrderItem(OrderItemBase):
     id: int
-    order_id: int  # Reference to the order that the item belongs to
+    order_id: int
+    name: str
+    price: float
 
     class Config:
-        orm_mode = True  # This allows SQLAlchemy models to be used with Pydantic models
+        from_attributes = True  # 🔄 Use this for Pydantic v2 (replaces orm_mode)

@@ -5,11 +5,19 @@ from database import Base, engine
 from models import user, product, cart  # Include cart import
 from routers import product as product_router
 from auth.routes import router as auth_router
+from routers.order import router as order_router
 from routers import cart
 from routers import wishlist
 from routers import admin as admin_router  # 👈 NEW
 from routers import admin_product
 from routers import admin_order
+from routers import order
+from routers import review  # ✅ Add this line
+from routers import admin_review
+from routers import qna
+from routers import admin_qna
+
+
 
 
 # Create DB tables
@@ -40,3 +48,8 @@ app.include_router(wishlist.router, prefix="/api", tags=["Wishlist"])
 app.include_router(admin_router.router, prefix="/api", tags=["Admin"])  # 👈 Admin routes
 app.include_router(admin_product.router, tags=["Admin Products"])
 app.include_router(admin_order.router)
+app.include_router(order.router)
+app.include_router(review.router, prefix="/api", tags=["Reviews"])
+app.include_router(admin_review.router, prefix="/api", tags=["Admin Reviews"])
+app.include_router(qna.router, prefix="/api", tags=["Q&A"])
+app.include_router(admin_qna.router,  tags=["Admin QnA"])

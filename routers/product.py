@@ -82,3 +82,22 @@ def delete_product(id: int, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return {"detail": "Product deleted successfully"}
+
+
+@router.get("/products/category/{category}", response_model=List[dict])
+def get_products_by_category(category: str, db: Session = Depends(get_db)):
+    products = db.query(Product).filter(Product.category == category).all()
+    
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found in this category")
+    response = [
+        {
+            "id": str(product.id), 
+            "title": product.title,
+            "image": product.img,  
+            "price": product.price,
+        }
+        for product in products
+    ]
+    
+    return response
