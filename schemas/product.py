@@ -82,7 +82,7 @@ class ProductUpdate(BaseModel):
 
 # ✅ Updated response schema to match frontend shape
 class Product(ProductBase):
-    id: Union[int, str]  # Accept both integer and string, or switch to `str` only if all your IDs are strings
+    id: Union[int, str]  
 
     images: Optional[List[str]] = []
     stock: Optional[int] = 0
