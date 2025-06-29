@@ -3,8 +3,9 @@ from typing import List, Optional
 from datetime import datetime
 
 class LocalOrderItemCreate(BaseModel):
-    product: str  # String product ID
+    product_id: int
     quantity: int
+
 
 class OrderBase(BaseModel):
     # User details
@@ -28,6 +29,7 @@ class OrderBase(BaseModel):
     payment_status: Optional[str] = "Unpaid"
 
 class OrderCreate(OrderBase):
+    user_id: Optional[int] = None
     items: List[LocalOrderItemCreate]  # List of items in the order
 
 class OrderUpdate(BaseModel):

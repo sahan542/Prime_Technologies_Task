@@ -34,6 +34,7 @@ from sqlalchemy import (
     Float
 )
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import relationship  # ✅ required for back_populates
 from database import Base
 
 
@@ -65,3 +66,6 @@ class Product(Base):
 
     created_at = Column(TIMESTAMP, server_default=func.now())   # from `createdAt`
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())  # from `updatedAt`
+
+    # ✅ Relationship to OrderItem (required if back_populates is used in OrderItem)
+    order_items = relationship("OrderItem", back_populates="product", cascade="all, delete")

@@ -99,3 +99,14 @@ class Product(ProductBase):
 
     class Config:
         from_attributes = True
+
+
+class ProductMini(BaseModel):
+    id: Union[int, str]
+    title: str
+    image: Optional[str] = Field(None, alias="img")
+    price: float
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True

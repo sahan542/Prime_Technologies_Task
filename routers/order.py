@@ -17,46 +17,53 @@ router = APIRouter(prefix="/api/admin", tags=["Admin"])
 # 🚀 Create Order (Checkout)
 # router = APIRouter(prefix="/api/admin", tags=["Admin"])
 @router.post("/orders")
-def create_order(data: dict, db: Session = Depends(get_db)):
-    # Create the order first
-    order = Order(
-        full_name=data['full_name'],
-        full_address=data['full_address'],
-        phone_no=data['phone_no'],
-        email=data['email'],
-        country=data['country'],
-        order_notes=data['order_notes'],
-        inside_dhaka=data['inside_dhaka'],
-        shipping_method=data['shipping_method'],
-        shipping_cost=data['shipping_cost'],
-        service_fee=data['service_fee'],
-        total_price=data['total_price'],
-        payment_method=data['payment_method'],
-        user_id=data['user_id']
-    )
-    db.add(order)
-    db.commit()  # Commit to get the order ID
-
-    # Now, add items to the order_items table
-    for item in data['items']:
-        # Fetch product data to get product details like name and price
-        product = db.query(Product).filter_by(id=item['product']).first()
-
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
-
-        order_item = OrderItem(
-            product_id=item['product'],  # Product ID
-            order_id=order.id,  # Foreign key to the order
-            quantity=item['quantity'],
-            name=product.title,  # Use the product's title
-            price=product.price  # Use the product's price
+def create_order(data: OrderCreate, db: Session = Depends(get_db)):
+    try:
+        # Step 1: Create Order
+        order = OrderModel(
+            full_name=data.full_name,
+            full_address=data.full_address,
+            phone_no=data.phone_no,
+            email=data.email,
+            country=data.country,
+            order_notes=data.order_notes,
+            inside_dhaka=data.inside_dhaka,
+            shipping_method=data.shipping_method,
+            shipping_cost=data.shipping_cost,
+            service_fee=data.service_fee,
+            total_price=data.total_price,
+            payment_method=data.payment_method,
+            payment_status=data.payment_status,
+            status=data.status,
+            user_id=data.user_id  # ✅ Assign it here
         )
-        db.add(order_item)
-    
-    db.commit()  # Commit the transaction to save the order and order items
+        db.add(order)
+        db.commit()
+        db.refresh(order)
 
-    return {"message": "Order created successfully!", "order_id": order.id}
+        # Step 2: Add Order Items
+        for item in data.items:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if not product:
+                raise HTTPException(status_code=404, detail=f"Product ID {item.product_id} not found")
+
+            order_item = OrderItemModel(
+                product_id=item.product_id,
+                order_id=order.id,
+                quantity=item.quantity,
+                name=product.title,
+                price=product.price
+            )
+            db.add(order_item)
+
+        db.commit()
+
+        return {"message": "Order created successfully!", "order_id": order.id}
+
+    except Exception as e:
+        db.rollback()
+        print("❌ Order creation error:", traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Order creation failed.")
 
 # 👤 Get all orders for current user
 @router.get("/me", response_model=List[Order])
