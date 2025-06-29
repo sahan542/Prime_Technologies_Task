@@ -1,45 +1,62 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List  # Import List from typing
 from database import get_db
 import models
 from schemas.order import Order, OrderCreate, OrderUpdate
-
-
 from models.order import Order as OrderModel
 from models.order_item import OrderItem as OrderItemModel
-from schemas.order import OrderCreate, Order, OrderUpdate
-from database import get_db
+from models.product import Product  # Import Product model
 from auth.routes import get_current_user
 from models.user import User
+import traceback
+from models.order_item import OrderItem
 
-router = APIRouter(prefix="/orders", tags=["Orders"])
+router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
 # 🚀 Create Order (Checkout)
-@router.post("/", response_model=Order)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    db_order = OrderModel(**order.dict(exclude={"items"}))
-    db.add(db_order)
-    db.commit()
-    db.refresh(db_order)
+# router = APIRouter(prefix="/api/admin", tags=["Admin"])
+@router.post("/orders")
+def create_order(data: dict, db: Session = Depends(get_db)):
+    # Create the order first
+    order = Order(
+        full_name=data['full_name'],
+        full_address=data['full_address'],
+        phone_no=data['phone_no'],
+        email=data['email'],
+        country=data['country'],
+        order_notes=data['order_notes'],
+        inside_dhaka=data['inside_dhaka'],
+        shipping_method=data['shipping_method'],
+        shipping_cost=data['shipping_cost'],
+        service_fee=data['service_fee'],
+        total_price=data['total_price'],
+        payment_method=data['payment_method'],
+        user_id=data['user_id']
+    )
+    db.add(order)
+    db.commit()  # Commit to get the order ID
 
-    for item in order.items:
-        db_item = OrderItemModel(
-            order_id=db_order.id,
-            product_id=item.product_id,
-            name=item.name,
-            price=item.price,
-            quantity=item.quantity
+    # Now, add items to the order_items table
+    for item in data['items']:
+        # Fetch product data to get product details like name and price
+        product = db.query(Product).filter_by(id=item['product']).first()
+
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        order_item = OrderItem(
+            product_id=item['product'],  # Product ID
+            order_id=order.id,  # Foreign key to the order
+            quantity=item['quantity'],
+            name=product.title,  # Use the product's title
+            price=product.price  # Use the product's price
         )
-        db.add(db_item)
+        db.add(order_item)
+    
+    db.commit()  # Commit the transaction to save the order and order items
 
-    db.commit()
-    db.refresh(db_order)
-    return db_order
-
+    return {"message": "Order created successfully!", "order_id": order.id}
 
 # 👤 Get all orders for current user
 @router.get("/me", response_model=List[Order])

@@ -1,64 +1,44 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import List, Optional
 from datetime import datetime
-from .order_item import OrderItem  # ✅ Only import the response schema
 
-
-# 🛒 Each item in the order (already exists)
 class LocalOrderItemCreate(BaseModel):
-    product_id: str  # updated to match your frontend: string id
-    name: str
-    price: float
+    product: str  # String product ID
     quantity: int
 
-
-# 🎯 Shared base model for orders
 class OrderBase(BaseModel):
-    # user_id: int
-
-    # Billing fields
-    first_name: str
-    last_name: str
-    street_address: str
-    apartment: Optional[str] = None
-    city: str
-    phone: str
+    # User details
+    full_name: str
+    full_address: str
+    phone_no: str
     email: EmailStr
-
-    create_account: Optional[bool] = False
-    ship_different: Optional[bool] = False
+    country: str
     order_notes: Optional[str] = None
+    inside_dhaka: bool
 
-    # Summary
+    # Shipping details
     shipping_method: str  # 'outside' or 'colombo'
     shipping_cost: float
     service_fee: float
-    total_amount: float
+    total_price: float  # Total price for the order
 
-    # Payment
-    payment_method: str  # 'cod', 'card', etc.
+    # Payment details
+    payment_method: str  # 'COD', 'card', etc.
     status: Optional[str] = "Pending"
     payment_status: Optional[str] = "Unpaid"
 
-
-# 🆕 For creating orders (includes cart items)
 class OrderCreate(OrderBase):
-    items: List[LocalOrderItemCreate]
+    items: List[LocalOrderItemCreate]  # List of items in the order
 
-
-# ✏️ For updating order status or payment
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
     payment_status: Optional[str] = None
 
-
-# ✅ Full response schema
 class Order(OrderBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    items: List[OrderItem] = []
+    id: Optional[int]  # Make id optional
+    created_at: Optional[datetime]  # Make created_at optional
+    updated_at: Optional[datetime]  # Make updated_at optional
+    items: List[LocalOrderItemCreate] = []  # Each order will have a list of items
 
-class Config:
-    from_attributes = True
-
+    class Config:
+        orm_mode = True  # This allows Pydantic to work with SQLAlchemy models
