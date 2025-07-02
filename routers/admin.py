@@ -70,32 +70,30 @@ def update_admin_status(
     return user
 
 
-@router.get("/export", response_class=StreamingResponse)
+@router.get("/users/export", response_class=StreamingResponse)
 def export_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_required)  # Make sure only admin can export users
+    current_user: User = Depends(admin_required)
 ):
-    # Fetch all users from the database
     users = db.query(User).all()
 
-    # Create a StringIO buffer to hold the CSV data
     output = StringIO()
     writer = csv.writer(output)
 
-    # Write the CSV headers
-    writer.writerow([
-        "ID", "Username", "Email", "Is Admin", "Created At", "Updated At"
-    ])
+    # Corrected header (no "Username")
+    writer.writerow(["ID", "Email", "Is Admin", "Created At", "Updated At"])
 
-    # Write each user's data to the CSV
     for user in users:
         writer.writerow([
-            user.id, user.username, user.email, user.is_admin, user.created_at, user.updated_at
+            user.id,
+            user.email,
+            user.is_admin,
+            user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else '',
+            user.updated_at.isoformat() if hasattr(user, 'updated_at') and user.updated_at else ''
         ])
 
-    output.seek(0)  # Rewind the buffer to the beginning
+    output.seek(0)
 
-    # Return the CSV as a downloadable response
     return StreamingResponse(
         output,
         media_type="text/csv",

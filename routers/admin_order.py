@@ -127,3 +127,22 @@ def get_orders_by_user(
     return orders
 
 
+# Endpoint to update the payment_status (Unpaid -> Paid)
+@router.put("/{order_id}/payment_status", response_model=OrderSchema)
+def update_payment_status(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required)
+):
+    db_order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if not db_order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if db_order.payment_status != "Unpaid":
+        raise HTTPException(status_code=400, detail="Order is not in 'Unpaid' status")
+
+    db_order.payment_status = "Paid"
+    db.commit()
+    db.refresh(db_order)
+    return db_order
+
