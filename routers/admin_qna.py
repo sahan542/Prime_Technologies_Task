@@ -8,29 +8,37 @@ from dependencies.admin_dependency import admin_required
 
 router = APIRouter(prefix="/api/admin/qna", tags=["Admin QnA"])
 
-# 1. Get all QnAs
+# 1. Get all QnAs without Pagination
 @router.get("/", response_model=list[QnAResponse])
 def get_all_qnas(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
-    return db.query(QnA).all()
-
-# 2. Update QnA status (is_public)
+    qnas = db.query(QnA).all()  # Fetch all QnA data
+    return qnas
 @router.patch("/{qna_id}/status", response_model=QnAResponse)
 def update_qna_status(
     qna_id: int,
-    data: QnAStatusUpdate,
+    data: QnAStatusUpdate,  # This should be the correct schema
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    print("Received data:", data)  # Debugging: log incoming data
     qna = db.query(QnA).filter(QnA.qna_id == qna_id).first()
     if not qna:
         raise HTTPException(status_code=404, detail="QnA not found")
-    qna.is_public = data.is_public
-    db.commit()
-    db.refresh(qna)
-    return qna
+    
+    print(f"Before Update: is_public = {qna.is_public}")  # Debugging: log QnA before update
+    
+    qna.is_public = data.is_public  # Update the is_public field
+    db.commit()  # Commit changes to the database
+    db.refresh(qna)  # Refresh to ensure updated values are reflected
+
+    print(f"After Update: is_public = {qna.is_public}")  # Debugging: log QnA after update
+    
+    return qna  # Return the updated QnA object
+
+
 
 # 3. Delete QnA
 @router.delete("/{qna_id}")
@@ -46,7 +54,6 @@ def delete_qna(
     db.commit()
     return {"message": "QnA deleted successfully"}
 
-# 4. Answer a QnA
 @router.patch("/{qna_id}/answer", response_model=QnAResponse)
 def answer_qna(
     qna_id: int,
@@ -54,10 +61,19 @@ def answer_qna(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    # Fetch the QnA entry from the database
     qna = db.query(QnA).filter(QnA.qna_id == qna_id).first()
     if not qna:
         raise HTTPException(status_code=404, detail="QnA not found")
+    # Check if is_public is false, and set it to true
+    if not qna.is_public:
+        qna.is_public = True
+    # Update the answer
     qna.answer = data.answer
+    # Commit the changes to the database
     db.commit()
+    # Refresh the QnA object to get the updated values
     db.refresh(qna)
+    # Return the updated QnA object
     return qna
+

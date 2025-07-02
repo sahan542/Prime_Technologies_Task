@@ -11,7 +11,7 @@ class QnAResponse(BaseModel):
     user_email: str
     question: str
     answer: str
-    is_public: bool  # ✅ NEW
+    is_public: bool
     created_at: datetime
 
     class Config:
