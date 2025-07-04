@@ -27,4 +27,11 @@ def ask_question(
     return new_qna
 
 
+@router.get("/qna/product/{product_id}", response_model=list[QnAResponse])
+def get_qna_for_product(product_id: int, db: Session = Depends(get_db)):
+    # Fetch all Q&A data for the specified product where is_public is True
+    qna_data = db.query(QnA).filter(QnA.product_id == product_id, QnA.is_public == True).all()
+    return qna_data
+
+
 
