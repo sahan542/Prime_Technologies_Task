@@ -55,17 +55,17 @@ class Product(Base):
     benefits = Column(JSON, default=[])
 
     # Newly added fields from the payload
-    images = Column(ARRAY(String))                  # from `images`
-    stock = Column(Integer, default=0)              # from `stock`
-    discount = Column(Integer, nullable=True)       # from `discount`
-    tags = Column(ARRAY(String), default=[])        # from `tags`
-    total_reviews = Column(Integer, default=0)      # from `totalReviews`
-    average_ratings = Column(Float, default=0.0)    # from `averageRatings`
-    sales_count = Column(Integer, default=0)        # from `salesCount`
-    is_deleted = Column(Boolean, default=False)     # from `isDeleted`
+    images = Column(ARRAY(String))                
+    stock = Column(Integer, default=0)            
+    discount = Column(Integer, nullable=True)      
+    tags = Column(ARRAY(String), default=[])     
+    total_reviews = Column(Integer, default=0)     
+    average_ratings = Column(Float, default=0.0) 
+    sales_count = Column(Integer, default=0)       
+    is_deleted = Column(Boolean, default=False)   
 
-    created_at = Column(TIMESTAMP, server_default=func.now())   # from `createdAt`
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())  # from `updatedAt`
+    created_at = Column(TIMESTAMP, server_default=func.now())  
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now()) 
 
     # ✅ Relationship to OrderItem (required if back_populates is used in OrderItem)
     order_items = relationship("OrderItem", back_populates="product", cascade="all, delete")

@@ -16,6 +16,9 @@ from routers import review  # ✅ Add this line
 from routers import admin_review
 from routers import qna
 from routers import admin_qna
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)

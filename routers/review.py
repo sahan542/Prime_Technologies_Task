@@ -29,4 +29,6 @@ def create_review(
 
 @router.get("/reviews/product/{product_id}", response_model=list[ReviewSchema])
 def get_reviews(product_id: int, db: Session = Depends(get_db)):
-    return db.query(Review).filter(Review.product_id == product_id).all()
+    # Fetch only reviews where is_public is True
+    reviews = db.query(Review).filter(Review.product_id == product_id, Review.is_public == True).all()
+    return reviews
