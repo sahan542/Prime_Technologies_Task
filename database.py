@@ -8,7 +8,7 @@ import os
 load_dotenv()  # Load environment variables from .env
 
 # Replace with your actual PostgreSQL connection string
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/ecommerce_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://doadmin:AVNS_a8ujVV5Kz17xSRI0Ha1@db-postgresql-blr1-61912-do-user-23749570-0.m.db.ondigitalocean.com:25060/defaultdb?sslmode=require")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
