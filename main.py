@@ -45,7 +45,7 @@ app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(product_router.router, prefix="/api", tags=["Products"])
 app.include_router(cart.router)
 app.include_router(wishlist.router, prefix="/api", tags=["Wishlist"])
-app.include_router(admin_router.router, prefix="/api", tags=["Admin"])  # 👈 Admin routes
+app.include_router(admin_router.router, prefix="/api", tags=["Admin"]) 
 app.include_router(admin_product.router, tags=["Admin Products"])
 app.include_router(admin_order.router)
 app.include_router(order.router)
