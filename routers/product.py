@@ -102,7 +102,21 @@ def delete_product(id: int, db: Session = Depends(get_db)):
 # -----------------------------
 # Get Products by Category
 # -----------------------------
-@router.get("/products/category/{category}", response_model=List[ProductMini])
+# @router.get("/products/category/{category}", response_model=List[ProductMini])
+# def get_products_by_category(category: str, db: Session = Depends(get_db)):
+#     products = db.query(Product).filter(
+#         Product.category == category,
+#         Product.visible == True,
+#         Product.is_deleted == False
+#     ).all()
+
+#     if not products:
+#         raise HTTPException(status_code=404, detail="No products found in this category")
+    
+#     return products
+
+
+@router.get("/products/category/{category}", response_model=List[ProductSchema])
 def get_products_by_category(category: str, db: Session = Depends(get_db)):
     products = db.query(Product).filter(
         Product.category == category,
