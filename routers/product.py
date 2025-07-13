@@ -20,10 +20,7 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     db.refresh(db_product)
     return db_product
 
-# -----------------------------
-# List Products (with filters)
-# -----------------------------
-@router.get("/products/", response_model=List[ProductSchema])
+@router.get("/products/")
 def list_products(
     db: Session = Depends(get_db),
     category: Optional[List[str]] = Query(None),
@@ -31,10 +28,12 @@ def list_products(
     min_price: Optional[float] = 0,
     max_price: Optional[float] = 1_000_000,
     search: Optional[str] = None,
-    limit: int = Query(50, gt=0),
-    offset: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
+    limit: int = Query(12, gt=0),
 ):
     try:
+        offset = (page - 1) * limit
+
         query = db.query(Product).filter(Product.visible == True, Product.is_deleted == False)
 
         if category:
@@ -54,11 +53,13 @@ def list_products(
                 )
             )
 
-        return query.offset(offset).limit(limit).all()
+        total = query.count()
+        items = query.offset(offset).limit(limit).all()
+
+        return { "items": items, "total": total }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
 
 # -----------------------------
 # Get Product by Slug

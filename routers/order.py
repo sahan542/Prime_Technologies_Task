@@ -95,3 +95,18 @@ def update_order_status(
     db.commit()
     db.refresh(order)
     return order
+
+
+# 🧾 Get order by order ID
+@router.get("/orders/{order_id}", response_model=Order)
+def get_order_by_id(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    order = db.query(OrderModel).filter(OrderModel.id == order_id, OrderModel.user_id == current_user.id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return order
