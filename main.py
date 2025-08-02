@@ -2,17 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import Base, engine
-from models import user, product, cart  # Include cart import
+from models import user, product, cart 
 from routers import product as product_router
 from auth.routes import router as auth_router
 from routers.order import router as order_router
 from routers import cart
 from routers import wishlist
-from routers import admin as admin_router  # 👈 NEW
+from routers import admin as admin_router  
 from routers import admin_product
 from routers import admin_order
 from routers import order
-from routers import review  # ✅ Add this line
+from routers import review 
 from routers import admin_review
 from routers import qna
 from routers import admin_qna
@@ -20,16 +20,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# Create DB tables
 Base.metadata.create_all(bind=engine)
 
-# Init app
 app = FastAPI()
 
-# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001","http://139.59.63.32:3000"], 
+    allow_origins=["http://localhost:3000", "http://localhost:3001","http://139.59.63.32:3000", "http://primetask.duckdns.org"], 
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  

@@ -6,6 +6,9 @@ class LocalOrderItemCreate(BaseModel):
     product_id: int
     quantity: int
 
+    class Config:
+        from_attributes = True
+
 
 class OrderBase(BaseModel):
     # User details
@@ -43,4 +46,4 @@ class Order(OrderBase):
     items: List[LocalOrderItemCreate] = []  # Each order will have a list of items
 
     class Config:
-        orm_mode = True  # This allows Pydantic to work with SQLAlchemy models
+        from_attributes = True   # This allows Pydantic to work with SQLAlchemy models

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from models.qna import QnA
@@ -8,14 +8,44 @@ from dependencies.admin_dependency import admin_required
 
 router = APIRouter(prefix="/api/admin/qna", tags=["Admin QnA"])
 
-# 1. Get all QnAs without Pagination
-@router.get("/", response_model=list[QnAResponse])
+@router.get("/", response_model=dict, summary="Get all QnAs with pagination")
 def get_all_qnas(
+    page: int = Query(1, ge=1),  # Page number (default 1, minimum 1)
+    limit: int = Query(8, gt=0),  # Limit on the number of items per page (default to 8)
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
-    qnas = db.query(QnA).all()  # Fetch all QnA data
-    return qnas
+    try:
+        # Calculate the offset based on the page and limit
+        offset = (page - 1) * limit
+
+        # Start the query to fetch all QnAs
+        query = db.query(QnA)
+
+        # Get the total number of QnAs
+        total_qnas = query.count()
+
+        # Fetch the QnAs for the current page
+        qnas = query.offset(offset).limit(limit).all()
+
+        if not qnas:
+            raise HTTPException(status_code=404, detail="No QnAs found")
+
+        # Calculate total pages
+        total_pages = (total_qnas // limit) + (1 if total_qnas % limit > 0 else 0)
+
+        # Return the QnAs along with pagination metadata
+        return {
+            "qnas": [QnAResponse.from_orm(qna) for qna in qnas],  # Convert SQLAlchemy models to Pydantic models
+            "currentPage": page,
+            "totalPages": total_pages,
+            "totalQnAs": total_qnas,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+
 @router.patch("/{qna_id}/status", response_model=QnAResponse)
 def update_qna_status(
     qna_id: int,

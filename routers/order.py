@@ -11,6 +11,9 @@ from auth.routes import get_current_user
 from models.user import User
 import traceback
 from models.order_item import OrderItem
+from datetime import datetime, timedelta
+from sqlalchemy import func
+
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
@@ -110,3 +113,81 @@ def get_order_by_id(
         raise HTTPException(status_code=404, detail="Order not found")
 
     return order
+
+
+# 🚀 Get total sales for each day in the last 7 days
+@router.get("/sales/last-seven-days", response_model=List[float])
+def get_sales_last_seven_days(db: Session = Depends(get_db)):
+    try:
+        # Calculate the start and end of the last 7 days
+        today = datetime.now()
+        last_seven_days = [today - timedelta(days=i) for i in range(7)]
+
+        # Query the database to get the total sales for each of the last 7 days
+        sales_data = []
+        for day in last_seven_days:
+            start_of_day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = day.replace(hour=23, minute=59, second=59, microsecond=999999)
+            
+            # Query to get total sales for each day
+            total_sales = db.query(func.sum(OrderModel.total_price)) \
+                .filter(OrderModel.created_at >= start_of_day, OrderModel.created_at <= end_of_day) \
+                .scalar()  # scalar() returns the first column of the first row
+
+            sales_data.append(total_sales if total_sales else 0)
+
+        return sales_data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching sales data: {str(e)}")
+    
+
+
+# 🚀 Get count and percentage of each order status (Pending, Dispatched, Returned)
+@router.get("/order-dispatch-status", response_model=List[dict])
+def get_order_dispatch_status(db: Session = Depends(get_db)):
+    try:
+        # Get total count of orders (total number of orders in the table)
+        total_orders = db.query(func.count(OrderModel.id)).scalar()
+
+        if total_orders == 0:
+            raise HTTPException(status_code=400, detail="No orders found.")
+
+        # Count orders with "Pending" status
+        pending_count = db.query(func.count(OrderModel.id)).filter(OrderModel.status.ilike("Pending")).scalar()
+
+        # Count orders with "Dispatched" status
+        dispatched_count = db.query(func.count(OrderModel.id)).filter(OrderModel.status.ilike("Dispatched")).scalar()
+
+        # Count orders with "Returned" status
+        returned_count = db.query(func.count(OrderModel.id)).filter(OrderModel.status.ilike("Returned")).scalar()
+
+        # Calculate percentages for each status
+        pending_percentage = (pending_count / total_orders) * 100 if total_orders > 0 else 0
+        dispatched_percentage = (dispatched_count / total_orders) * 100 if total_orders > 0 else 0
+        returned_percentage = (returned_count / total_orders) * 100 if total_orders > 0 else 0
+
+        # Ensure all statuses are returned even if the count is 0
+        status_data = [
+            {
+                "status": "Pending",
+                "count": pending_count,
+                "percentage": pending_percentage
+            },
+            {
+                "status": "Dispatched",
+                "count": dispatched_count,
+                "percentage": dispatched_percentage
+            },
+            {
+                "status": "Returned",
+                "count": returned_count,
+                "percentage": returned_percentage
+            }
+        ]
+
+        # Return the percentages with count for all three statuses
+        return status_data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating dispatch status: {str(e)}")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from models.product import Product as ProductModel
@@ -116,16 +116,46 @@ def export_products(
         headers={"Content-Disposition": "attachment; filename=products.csv"}
     )
 
-@router.get("/", response_model=list[ProductSchema])
-def get_all_products(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(admin_required)
-):
-    # Fetch all products from the database
-    products = db.query(ProductModel).all()
 
-    # Return the list of products
-    return products
+@router.get("/products", response_model=dict, summary="Get all products with pagination")
+def get_all_products(
+    page: int = Query(1, ge=1),  # Page number (default to 1, minimum 1)
+    limit: int = Query(8, gt=0),  # Limit on the number of items per page (default to 8)
+    db: Session = Depends(get_db),  # Dependency to get the DB session
+    current_user: User = Depends(admin_required)  # Ensure the user is an admin
+):
+    try:
+        # Calculate the offset based on the page and limit
+        offset = (page - 1) * limit
+
+        # Start the query with the basic filter (fetch all products)
+        query = db.query(ProductModel)
+
+        # Get the total number of products
+        total_products = query.count()
+
+        # Fetch the products for the current page
+        products = query.offset(offset).limit(limit).all()
+
+        if not products:
+            # Optional: Provide a friendly message if no products are found.
+            raise HTTPException(status_code=404, detail="No products found for this page.")
+
+        # Calculate total pages
+        total_pages = (total_products // limit) + (1 if total_products % limit > 0 else 0)
+
+        # Return the products along with pagination metadata
+        return {
+            "products": [ProductSchema.from_orm(product) for product in products],  # Convert SQLAlchemy models to Pydantic models
+            "currentPage": page,
+            "totalPages": total_pages,
+            "totalProducts": total_products,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+
 
 
 @router.put("/{id}/edit", response_model=ProductSchema)
